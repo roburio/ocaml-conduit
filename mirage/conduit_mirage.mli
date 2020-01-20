@@ -23,7 +23,7 @@
 module Flow: Mirage_flow.S
 (** Dynamic flows. *)
 
-type callback = Flow.flow -> unit Lwt.t
+type callback = Ipaddr.V4.t -> Flow.flow -> unit Lwt.t
 (** The type for callback values. *)
 
 module type Handler = sig
