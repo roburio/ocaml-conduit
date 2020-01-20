@@ -54,7 +54,7 @@ module Flow = struct
   let close (Flow ((module F), flow)) = F.close flow
 end
 
-type callback = Flow.flow -> unit Lwt.t
+type callback = Ipaddr.V4.t -> Flow.flow -> unit Lwt.t
 
 module type Handler = sig
   (** Runtime handler *)
@@ -183,7 +183,7 @@ module TCP (S: Mirage_stack.V4) = struct
         Printf.printf "conduit connection from %s:%d\n%!"
           (Ipaddr.V4.to_string ip) port;
         let f = Flow.create (module S.TCPV4) flow in
-        fn f
+        fn ip f
       );
     s
 
@@ -238,13 +238,13 @@ module Vchan (Xs: Xs_client_lwt.S) (V: VCHAN) = struct
   let listen (t:t) (server:vchan_server) fn = match server with
     | `Vchan (`Direct (domid, port)) ->
       V.server ~domid ~port () >>= fun t ->
-      fn (Flow.create (module V) t)
+      fn Ipaddr.V4.unspecified (Flow.create (module V) t)
     | `Vchan `Domain_socket ->
       XS.listen t >>= fun conns ->
       Lwt_stream.iter_p (function
           | `Direct (domid, port) ->
             V.server ~domid ~port () >>= fun t ->
-            fn (Flow.create (module V) t)
+            fn Ipaddr.V4.unspecified (Flow.create (module V) t)
         ) conns
 
 end
@@ -286,10 +286,10 @@ module TLS = struct
     | Ok flow -> Lwt.return (Flow.create (module TLS) flow)
 
   let listen (t:t) (`TLS (c, x): server) fn =
-    listen t x (fun flow ->
+    listen t x (fun ip flow ->
         TLS.server_of_flow c flow >>= function
         | Error e -> err_flow_write "listen" e
-        | Ok flow -> fn (Flow.create (module TLS) flow)
+        | Ok flow -> fn ip (Flow.create (module TLS) flow)
       )
 
 end
