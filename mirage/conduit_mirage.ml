@@ -179,9 +179,7 @@ module TCP (S: Mirage_stack.V4) = struct
   let listen t (`TCP port: server) fn =
     let s, _u = Lwt.task () in
     S.listen_tcpv4 t ~port (fun flow ->
-        let ip, port = S.TCPV4.dst flow in
-        Printf.printf "conduit connection from %s:%d\n%!"
-          (Ipaddr.V4.to_string ip) port;
+        let ip, _ = S.TCPV4.dst flow in
         let f = Flow.create (module S.TCPV4) flow in
         fn ip f
       );
